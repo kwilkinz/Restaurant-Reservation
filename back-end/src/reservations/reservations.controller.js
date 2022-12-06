@@ -11,7 +11,7 @@ async function list(req, res) {
   });
 }
 
-// Create 
+// Create .
 
 // middleware (valid properties, booked, valid day)
 
