@@ -1,12 +1,15 @@
-/**
- * Defines the router for reservation resources.
- *
- * @type {Router}
- */
-
 const router = require("express").Router();
 const controller = require("./reservations.controller");
+const methodNotAllowed = require("../errors/methodNotAllowed")
 
-router.route("/").get(controller.list);
+/**
+ * Defines the router for reservation resources.
+ * URL = "/"
+ */
+
+// - return list of all movies
+router.route("/")
+    .get(controller.list)
+    .all(methodNotAllowed);
 
 module.exports = router;
