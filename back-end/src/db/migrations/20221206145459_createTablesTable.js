@@ -7,8 +7,8 @@ exports.up = function(knex) {
       table.integer("reservation_id").defaultTo(null);
       table
         .foreign("reservation_id")
-        .reference("reservation_id")
-        .inTable("reservations")
+        .references("reservation_id")
+        .inTable("reservations");
   });
 };
 
