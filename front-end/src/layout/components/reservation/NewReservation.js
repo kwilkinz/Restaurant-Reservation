@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useHistory } from "react-router-dom";
 import NewResForm from "./NewResForm";
-import createReservation from "../../../utils/api"
+
 
 
 function NewReservation() {
@@ -69,7 +69,7 @@ function NewReservation() {
       status: "booked",
     };
     try {
-      await createReservation(newRes, abortController.signal);
+      // await createReservation(newRes, abortController.signal);
       setForm(initial);
       history.push(`/dashboard?date=${newRes.reservation_date}`)
     } catch (error) {

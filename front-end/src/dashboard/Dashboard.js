@@ -1,23 +1,33 @@
 import React, { useEffect, useState } from "react";
 import { listReservations } from "../utils/api";
+import { next, previous, today } from "../utils/date-time";
+import {useHistory} from "react-router-dom";
 import ErrorAlert from "../layout/errors/ErrorAlert";
-import viewAllReservation from "./ViewReservations";
+import ViewAllReservation from "./ViewReservations";
+
 
 /**
  * Defines the dashboard page.
  * @param date
  *  the date for which the user wants to view reservations.
- * @returns {JSX.Element}
  */
 
 function Dashboard({ date }) {
 
+  // useStates
   const [reservations, setReservations] = useState([]);
   const [reservationsError, setReservationsError] = useState(null);
+  const [tables, setTables] = useState([]);
+  const [tablesError, setTablesError] = useState(null);
 
+  const history = useHistory();
+
+
+  // to get the date to change
+  useEffect(() => {
+   
+  }, []);
   useEffect(loadDashboard, [date]);
-
-  //
   
 
 
@@ -29,29 +39,37 @@ function Dashboard({ date }) {
       .then(setReservations)
       .catch(setReservationsError);
     return () => abortController.abort();
-  }
+  };
 
-  // loop through the list to print all the reservations 
-  const reservationList = reservations.map((reservation, index) => {
+  // reservations List - print all the reservations 
+  const reservationList = reservations.map((reservation) => {
     if (reservation.status === "finished" || reservation.status === "canceled") return null;
-    <viewAllReservation key={index} reservation={reservation} />   
-  })
+    <ViewAllReservation key={reservation.reservation_id} reservation={reservation} />   
+  });
+
+  // tables List 
+  const tablesList = tables.map((table) => {
+    // have a table View here > key={table.table_id} table={table}
+  });
 
   return (
     <main>
       <h1>Dashboard</h1>
       <div className="d-md-flex mb-3">
-        <h4 className="mb-0">Reservations for date</h4>
-        <button className="btn btn-info px-3 py-2"> Previous </button>
-        <button className="btn btn-info px-3 py-2"> Next </button>
-        <button className="btn btn-info px-3 py-2"> Today </button>
+        <button className="btn btn-info" onClick={() => history.push(`/dashboard?date=${previous(date)}`)}> Previous </button>
+        <button className="btn btn-info" onClick={() => history.push(`/dashboard?date=${today(date)}`)}> Today </button>
+        <button className="btn btn-info" onClick={() => history.push(`/dashboard?date=${next(date)}`)}> Next </button>
       </div>
+      <div>
+        <h2>Reservations for {date} </h2>
+      </div>
+
       <div>
         <div className="container fluid">{reservationList}</div>
       </div>
 
       <ErrorAlert error={reservationsError} />
-      {JSON.stringify(reservations)}
+      <ErrorAlert error={tablesError} />
     </main>
   );
 }
