@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { listReservations } from "../utils/api";
+import { listReservations, listTables } from "../utils/api";
 import { next, previous, today } from "../utils/date-time";
-import {useHistory} from "react-router-dom";
+import useQuery from "../utils/useQuery";
+import { useHistory, useRouteMatch } from "react-router-dom";
 import ErrorAlert from "../layout/errors/ErrorAlert";
 import ViewAllReservation from "./ViewReservations";
 
@@ -12,7 +13,7 @@ import ViewAllReservation from "./ViewReservations";
  *  the date for which the user wants to view reservations.
  */
 
-function Dashboard({ date }) {
+function Dashboard({ date, setDate }) {
 
   // useStates
   const [reservations, setReservations] = useState([]);
@@ -21,12 +22,21 @@ function Dashboard({ date }) {
   const [tablesError, setTablesError] = useState(null);
 
   const history = useHistory();
-
+  const query = useQuery();
+  const route = useRouteMatch();
 
   // to get the date to change
   useEffect(() => {
-   
-  }, []);
+    function updateDate() {
+      const queryDate = query.get("date");
+      if (queryDate) {
+        setDate(queryDate);
+      } else {
+        setDate(today());
+      }
+    }
+    updateDate();
+  }, [query, route, setDate]);
   useEffect(loadDashboard, [date]);
   
 
@@ -35,9 +45,13 @@ function Dashboard({ date }) {
   function loadDashboard() {
     const abortController = new AbortController();
     setReservationsError(null);
+    setTablesError(null);
     listReservations({ date }, abortController.signal)
       .then(setReservations)
       .catch(setReservationsError);
+    listTables(abortController.signal)
+      .then(setTables)
+      .catch(setTablesError);
     return () => abortController.abort();
   };
 
@@ -66,6 +80,11 @@ function Dashboard({ date }) {
 
       <div>
         <div className="container fluid">{reservationList}</div>
+      </div>
+
+      <div>
+        <h3>Tables</h3>
+        <div>{tablesList}</div>
       </div>
 
       <ErrorAlert error={reservationsError} />

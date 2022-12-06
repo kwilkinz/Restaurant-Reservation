@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useHistory } from "react-router-dom";
 import NewResForm from "./NewResForm";
-
+import ErrorAlert from "../../errors/ErrorAlert";
+import { createReservation } from "../../../utils/api";
 
 
 function NewReservation() {
@@ -69,7 +70,7 @@ function NewReservation() {
       status: "booked",
     };
     try {
-      // await createReservation(newRes, abortController.signal);
+      await createReservation(newRes, abortController.signal);
       setForm(initial);
       history.push(`/dashboard?date=${newRes.reservation_date}`)
     } catch (error) {
@@ -82,7 +83,7 @@ function NewReservation() {
 
   return (
     <div className="container fluid">
-      {/* <ErrorAlert error={showError} /> */}
+      <ErrorAlert error={showError} />
       <NewResForm 
         form={form}
         handleChange={handleChange}

@@ -66,6 +66,19 @@ export async function clearTable(table_id, signal) {
   return await fetchJson(url, options);
 }
 
+/**
+ * creates a new reservation.
+ */
+export async function createReservation(reservation, signal) {
+  const url = new URL(`${API_BASE_URL}/reservations`);
+  const options = {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ data: reservation }),
+    signal,
+  };
+  return await fetchJson(url, options, reservation);
+}
 
 /**
  * Retrieves all existing reservation.
