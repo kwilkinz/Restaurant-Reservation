@@ -1,112 +1,95 @@
 import React, { useState } from "react";
 import { useHistory } from "react-router-dom";
+import NewResForm from "./NewResForm";
+import createReservation from "../../../utils/api"
+
 
 function NewReservation() {
 
-  const [newRes, setNewRes] = useState();
+  const initial = {
+    first_name: "",
+    last_name: "",
+    mobile_number: "",
+    people: 0,
+    reservation_date: "",
+    reservation_time: "",
+    status: "",
+  }
+
+  const [form, setForm] = useState({ ...initial });
+  const [showError, setShowError] = useState(false);
   const history = useHistory();
+  const abortController = new AbortController();
+
+  // Format Date
+  function formatDate(date) {
+    let formatDate = date.split('');
+    formatDate.splice(10); 
+    formatDate = formatDate.join('');
+    return formatDate;
+  }
+
+  // Format Time 
+  function formatTime(time) {
+    let formatTime = time.split('');
+    formatTime.splice(5)
+    formatTime = formatTime.join('');
+  }
 
 
   // handleChange for text
   const handleChange = ({ target }) => {
-    setNewRes({
-      ...newRes,
-      [target.name]: target.value,
-    });
+    const { name, value } = target;
+    switch(name) {
+      case "people":
+        setForm({ ...form, [name]: parseInt(value) });
+        break;
+      case "reservation_date":
+        setForm({ ...form, [name]: formatDate(value) });
+        break;
+      case "reservation_time":
+        setForm({ ...form, [name]: formatTime(value) });
+        break; 
+      default:
+        setForm({ ...form, [name]: value });
+    };
   };
 
-  //after clicked directed to the dashboard
+  // Handle Submit 
   async function handleSubmit(event) {
     event.preventDefault();
+    setShowError(false)
+    const newRes = {
+      first_name: form.first_name,
+      last_name: form.last_name,
+      mobile_number: form.mobile_number,
+      people: Number(form.people),
+      reservation_date: form.reservation_date,
+      reservation_time: form.reservation_time,
+      status: "booked",
+    };
+    try {
+      await createReservation(newRes, abortController.signal);
+      setForm(initial);
+      history.push(`/dashboard?date=${newRes.reservation_date}`)
+    } catch (error) {
+      if (error.name !== "AbortError") setShowError(error);
+    }
+    return () => { 
+      abortController.abort();
+    }
   }
 
   return (
-    <div>
-      <h1>Make a New Reservation</h1>
-      <form className="d-flex flex-column" onSubmit={handleSubmit}>
-        {/* First Name */}
-        <label htmlFor="first_name"> First Name: </label>
-        <input
-          className="form-control my-1"
-          id="first_name"
-          type="text"
-          name="first_name"
-          onChange={handleChange}
-          // value={newRes.name}
-          placeholder="Jane"
-        />
-
-        {/* Last Name */}
-        <label htmlFor="last_name"> Last Name: </label>
-        <input
-          className="form-control my-1"
-          id="last_name"
-          type="text"
-          name="last_name"
-          onChange={handleChange}
-          // value={newRes.name}
-          placeholder="Doe"
-        />
-
-        {/* Phone Number */}
-        <label htmlFor="mobile_number"> Phone Number: </label>
-        <input
-          className="form-control my-1"
-          id="mobile_number"
-          type="tel"
-          name="mobile_number"
-          onChange={handleChange}
-          //value={form[mobile_number]}
-          placeholder="(---) --- ----"
-        />
-
-        {/* Reservation Date */}
-        <label htmlFor="reservation_date"> Reservation Date: </label>
-        <input
-          className="form-control my-1"
-          id="reservation_date"
-          type="date"
-          name="reservation_date"
-          onChange={handleChange}
-          //value={form[reservation_date]}
-          pattern="\d{4}-\d{2}-\d{2}"
-          placeholder="YYYY-MM-DD"
-        />
-
-         {/* Time Reservation */}
-         <label htmlFor="reservation_time"> Reservation Time: </label>
-        <input
-          className="form-control my-1"
-          id="reservation_time"
-          type="time"
-          name="reservation_time"
-          onChange={handleChange}
-          //value={form[reservation_time]}
-          pattern="[0-9]{2}:[0-9]{2}"
-          placeholder="HH:MM"
-        />
-
-         {/* People in Reservation */}
-         <label htmlFor="people"> People In Party: </label>
-        <input
-          className="form-control my-1"
-          id="people"
-          type="number"
-          name="people"
-          onChange={handleChange}
-          //value={form[people]}
-          min={1}
-          placeholder="2"
-        />
-
-        {/* Submit Button */}
-        <button className="btn btn-primary"> Submit </button>
-
-        {/* Cancel Button goes back previous page */}
-        <button className="btn btn-secondary" onClick={() => history.goBack()}> Cancel </button>
-      </form>
+    <div className="container fluid">
+      {/* <ErrorAlert error={showError} /> */}
+      <NewResForm 
+        form={form}
+        handleChange={handleChange}
+        handleSubmit={handleSubmit}
+      />
     </div>
   );
-}
+};
 
 export default NewReservation;
