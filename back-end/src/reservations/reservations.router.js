@@ -8,7 +8,7 @@ const methodNotAllowed = require("../errors/methodNotAllowed")
 
 // - US-02 - return list of all reservations
 router.route("/")
-    // .get(controller.search)
+    .get(controller.search)
     .post(controller.create)
     .all(methodNotAllowed);
 
@@ -20,11 +20,12 @@ router.route("/byDate")
 router.route("/:reservation_id")
     .get(controller.read)
     .put(controller.update)
+    .delete(controller.destroy)
     .all(methodNotAllowed);
 
 // - US-06 - displays status of the reservation
 router.route("/:reservation_id/status")
-    // .put(controller.statusUpdate)
+    .put(controller.statusUpdate)
     .all(methodNotAllowed);
 
 module.exports = router;

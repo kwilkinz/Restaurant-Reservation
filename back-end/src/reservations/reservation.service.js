@@ -1,36 +1,36 @@
-const knex = require("../db/connection");
+// const knex = require("../db/connection");
 
-//list 
+//LIST 
 const list = (knex) => {
     return knex("reservations")
         .select("*");
 };
 
 
-// read(reservation_id)
-const read = (knex, reservation_id) => {
+// READ 
+const read = (knex, reservationId) => {
     return knex("reservations")
         .select("*")
-        .where({ reservation_id })
+        .where({ reservation_id: reservationId })
         .first();
 };
 
-// create(reservation)
-const create = (knex, reservation_id) => {
+// CREATE
+const create = (knex, reservation) => {
     return knex("reservations")
         .insert(reservation)
         .returning("*");
 };
 
-// update(reservation)
-const update = (knex, reservation_id, updatedRes) => {
+// UPDATE
+const update = (knex, reservationId, updatedReservation) => {
     return knex("reservations")
         .select("*")
-        .where({ reservation_id })
-        .update(updatedRes, "*");
+        .where({ reservation_id: reservationId })
+        .update(updatedReservation, "*");
 };
 
-// list the reservations by certain dates 
+// LISTBYDATE
 const listByDate = (knex, date) => {
     return knex("reservations")
         .select("*")
@@ -40,16 +40,21 @@ const listByDate = (knex, date) => {
         .orderBy("reservation_time", "asc");
 }
 
-// Search 
-const search = () => {
-    return knex() 
-}
-
-
-// delete the corresponding reservation id
-const destroy = () => {
+// SEARCH 
+const search = (knex, mobile_number) => {
     return knex("reservations")
-        .where({ reservation_id })
+      .whereRaw(
+        "translate(mobile_number, '() -', '') like ?",
+        `%${mobile_number.replace(/\D/g, "")}%`
+      )
+      .orderBy("reservation_date");
+  };
+
+
+// DESTROY
+const destroy = (knex, reservationId) => {
+    return knex("reservations")
+        .where({ reservation_id: reservationId })
         .del();
 };
 

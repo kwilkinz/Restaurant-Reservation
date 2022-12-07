@@ -1,5 +1,7 @@
 const service = require("./reservation.service");
 const asyncErrorBoundary = require("../errors/asyncErrorBoundary");
+const { today, next } = require("../../../front-end/src/utils/date-time");
+const knex = require("../db/connection");
 
 
 // ========== ============= ====== middleware ================ ================
@@ -81,44 +83,97 @@ async function ifReservationExists(req, res, next) {
 
 // List all Reservations on a specific date.
 async function listByDate(req, res) {
-  const { reservation_date } = req.query; 
-  const { reservation_id } = req.params;
-  if (!reservation_date) return next({ status: 400, message: "Reservation on this Date not found."});
+  const { reservation_date } = req.query;
+  if (!reservation_date) return next({status: 404, message: "Reservation Date cannot be found." });
 
-  const foundReservation = await service.listByDate(reservation_id, reservation_date);
-  res.json({ data: foundReservation })
-};
+  const knexInstance = req.app.get("db");
+  let reservations = await service.listByDate(knexInstance, reservation_date);
+  if (reservations instanceof Error)
+    return next({ message: reservations.message });
+  res.json({ data: reservations });
+}
 
 
 // Create 
-async function create(req, res) {
-  const { reservation_id } = req.params; 
-  const newReservation = await service.create(reservation_id, req.body);
-  if (newReservation instanceof Error) {
+async function create(req, res, next) {
+  const knexInstance = req.app.get("db");
+  let newReservation = await service.create(knexInstance, req.body);
+  if (newReservation instanceof Error)
     return next({ message: newReservation.message });
-  }
+
   res.status(201).json({ data: newReservation });
-};
+}
 
 
 // Read an Existing Reservation - by Id
 async function read(req, res) {
-  const { reservation_id } = req.params; 
-  const reservation = res.locals.reservation;
+  const knexInstance = req.app.get("db");
+  const { reservation } = res.locals;
   res.json({ data: reservation })
 };
 
-// update()
-async function update(req, res) {
-  const { reservation_id } = req.params; 
-  await service.update(reservation_id, req.body.data); 
-  res.json({ data: await service.getUpdatedRecord(reservation_id)})
-};
+// update an existing reservation - using the id
+async function update(req, res, next) {
+  const {
+    reservation: { reservation_id: reservationId, ...reservation },
+  } = res.locals;
+  const knexInstance = req.app.get("db");
+
+  const updatedReservation = { 
+    ...reservation, 
+    ...req.body };
+
+  let newReservation = await service.update(
+    knexInstance,
+    reservationId,
+    updatedReservation
+  );
+  newReservation = await service.read(knexInstance, reservationId);
+  if (newReservation instanceof Error)
+    return next({ message: newReservation.message });
+  res.json({ data: newReservation });
+}
 
 
 // update the status of the Reservation 
+async function statusUpdate(req, res, next) {
+  const {reservation: { reservation_id: reservationId, ...reservation },
+  } = res.locals;
+  const knexInstance = req.app.get("db");
+  const updatedReservation = { ...reservation, ...req.body };
 
-// search 
+  let newReservation = await service.update(
+    knexInstance,
+    reservationId,
+    updatedReservation
+  );
+  newReservation = await service.read(knexInstance, reservationId);
+  if (newReservation instanceof Error)
+    return next({ message: newReservation.message });
+  res.json({ data: newReservation });
+}
+
+
+// search for a reservation by - phone number 
+async function search(req, res, next) {
+  let { mobile_number } = req.query;
+  if (!mobile_number) mobile_number = "xxx-xxx-xxxx";
+  const knexInstance = req.app.get("db");
+  let reservations = await service.search(knexInstance, mobile_number);
+  if (reservations instanceof Error)
+    return next({ message: reservations.message });
+  res.json({ data: reservations });
+}
+
+
+//destroy an existing reservation using id
+async function destroy(req, res, next) {
+  const knexInstance = req.app.get("db")
+  const { reservation } = res.locals;
+  await service.destroy(knexInstance, reservation.reservation_id);
+  res.sendStatus(204);
+}
+
 
 module.exports = {
   listByDate: [asyncErrorBoundary(listByDate)],
@@ -128,4 +183,20 @@ module.exports = {
     create,
   ],
   read: [asyncErrorBoundary(ifReservationExists), read ],
+  update: [
+    asyncErrorBoundary(hasValidProperties),
+    asyncErrorBoundary(dataValidation),
+    asyncErrorBoundary(ifReservationExists),
+    update,
+  ],
+  statusUpdate: [
+    asyncErrorBoundary(hasValidProperties),
+    asyncErrorBoundary(ifReservationExists),
+    statusUpdate,
+  ],
+  search: [asyncErrorBoundary(search)],
+  destroy: [
+    asyncErrorBoundary(ifReservationExists),
+    destroy,
+  ],
 };
