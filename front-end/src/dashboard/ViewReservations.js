@@ -1,73 +1,39 @@
-import React, { useState } from "react";
-import { updateStatus } from "../utils/api";
-import ErrorAlert from "../layout/errors/ErrorAlert";
+import React from "react";
+import { useHistory, Link } from "react-router-dom";
+import { cancelReservation } from "../utils/api"; 
 
-function ViewAllReservation({ reservation }) {
-  // useStates
-  const [showError, setShowError] = useState(null);
+function ViewAllReservation({ reservations }) {
 
-  // Canceling a reservation
-  async function handleCancel(event) {
-    event.preventDefault();
+  const history = useHistory();
+
+  //Canceling a reservation
+  async function cancelReservation(res) {
     const abortController = new AbortController();
-    const message =
-      "Do you want to cancel this reservation? This cannot be undone.";
-    if (window.confirm(message)) {
-      try {
-        await updateStatus(
-          reservation.reservation_id,
-          "cancelled",
-          abortController.signal
-        );
-        window.location.reload(true);
-      } catch (error) {
-        if (error.name !== "AbortError") setShowError(error);
-      }
-    }
-  }
 
-  // UI
+    if (window.confirm("Do you want to cancel this reservation? This cannot be undone.")) {
+      await cancelReservation(res, abortController.signal) 
+      history.go(0);
+    };
+  };
+
+
   return (
     <div>
-      <p> {reservation.status} </p>
-      <p> Name: {reservation.first_name} {reservation.last_name}
-      </p>
-      <p> Mobile: {reservation.mobile_number}</p>
-      <p> Party Size: {reservation.people} </p>
-      <p>
-
-        {reservation.reservation_date} at {reservation.reservation_time}{" "}
-      </p>
-
-      <div>
-        {reservation.status === "booked" ? (
-          <button >
-            <a
-              href={`/reservations/${reservation.reservation_id}/seat`}
-              style={{ color: "white", textDecoration: "none" }}
-            > Seat
-            </a>
-          </button>
-        ) : null}
-        <button>
-          <a
-            href={`/reservations/${reservation.reservation_id}/edit`}
-            style={{ color: "white", textDecoration: "none" }}
-          >
-            Edit
-          </a>
-        </button>
-        <button
-          data-reservation-id-cancel={reservation.reservation_id}
-          onClick={handleCancel}
-        >
-          Cancel
-        </button>
-      </div>
-
-      <ErrorAlert error={showError} />
-    </div>
-  );
-}
+      <h1>hi there</h1>
+      {reservations.map((res) => (
+        <div className="card">
+          <div className="card-body">
+            <h5 className="card-title">{`${res.first_name} ${res.last_name} party of ${res.people}`}</h5>
+            <p className="card-text">Reserved at: {res.reservation_time}</p>
+            <p data-reservation-id-status={res.reservation_id}>{res.status}</p>
+            {res.status === "Booked" && <a href={`/reservations/${res.reservation_id}/seat`}><button>seat</button></a>}
+            <button name={res.reservation_id} data-reservation-id-cancel={res.reservation_id} onClick={() => cancelReservation(res.reservation_id)}>Cancel</button>
+            <Link to={`/reservations/${res.reservation_id}/edit`}><button>Edit</button></Link>
+          </div>
+        </div>
+      ))}
+  </div>
+  )
+};
 
 export default ViewAllReservation;

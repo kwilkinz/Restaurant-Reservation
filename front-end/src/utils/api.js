@@ -80,20 +80,7 @@ export async function createReservation(reservation, signal) {
   return await fetchJson(url, options, reservation);
 }
 
-/**
- * Retrieves all existing reservation.
- * @returns {Promise<[reservation]>}
- *  a promise that resolves to a possibly empty array of reservation saved in the database.
- */
-export async function listReservations(params, signal) {
-  const url = new URL(`${API_BASE_URL}/reservations`);
-  Object.entries(params).forEach(([key, value]) =>
-    url.searchParams.append(key, value.toString())
-  );
-  return await fetchJson(url, { headers, signal }, [])
-    .then(formatReservationDate)
-    .then(formatReservationTime);
-}
+
 
 
 /**
@@ -111,13 +98,7 @@ export async function createTable(table, signal) {
 }
 
 
-/**
- * retrieves all existing tables.
- */
-export async function listTables(signal) {
-  const url = new URL(`${API_BASE_URL}/tables`);
-  return await fetchJson(url, { headers, signal }, []);
-}
+
 
 
 /**
@@ -158,13 +139,93 @@ export async function updateReservation(reservation, signal) {
 }
 
 
-export async function updateStatus(reservation_id, status, signal) {
-  const url = new URL(`${API_BASE_URL}/reservations/${reservation_id}/status`);
+/**
+ * Updates the status of a reservation
+ * @param reservation_Id
+ * The reservation ID for the reservation
+ * @param status
+ * An object containing {status: "message"} that updates the status field of a reservation
+ * @param signal
+ * An optional abort signal
+ * @returns {Promise<[reservation]>}
+ *  a promise that resolves to a possibly empty array of reservation saved in the database.
+ */
+
+export async function statusUpdate(reservationId, status, signal) {
+  const url = `${API_BASE_URL}/reservations/${reservationId}/status`;
   const options = {
     method: "PUT",
     headers,
-    body: JSON.stringify({ data: { status } }),
+    body: JSON.stringify(status),
     signal,
   };
-  return await fetchJson(url, options, status);
+  return await fetchJson(url, options)
+    .then(formatReservationDate)
+    .then(formatReservationTime);
+}
+
+/**
+ * Retrieves all reservations of a certain date.
+ * @param reservation_date
+ * A date in YYYY-MM-DD format
+ * @param signal
+ * An optional abort signal
+ * @returns {Promise<[reservation]>}
+ *  a promise that resolves to a possibly empty array of reservation saved in the database.
+ */
+
+ export async function readByDate(reservation_date, signal) {
+  const url = `${API_BASE_URL}/reservations/ByDate?reservation_date=${reservation_date}`;
+  return await fetchJson(url, { signal })
+    .then(formatReservationDate)
+    .then(formatReservationTime);
+}
+
+/**
+ * Unoccupy a table in the database.
+ * @param tableId
+ * The table_id for the table to be unseated. It's status field will be changed to "Free"
+ * @param signal
+ * An optional abort signal
+ */
+
+// --- IN USE on DASHBOARD
+
+ export async function freeTable(id, signal){
+  const url = new URL(`${API_BASE_URL}/tables/${id}/seat`);
+  const destroy = {data: {
+    table_id: parseInt(id)
+   }}
+   return await fetchJson(url, {signal, method: 'DELETE', body: JSON.stringify(destroy), headers});
+  }
+
+/**
+ * retrieves all existing tables.
+ */
+ export async function listTables(params, signal) {
+  const url = new URL(`${API_BASE_URL}/tables`);
+  return await fetchJson(url, { headers, signal }, []);
+}
+
+/**
+ * Retrieves all existing reservation.
+ * @returns {Promise<[reservation]>}
+ *  a promise that resolves to a possibly empty array of reservation saved in the database.
+ */
+ export async function listReservations(params, signal) {
+  const url = new URL(`${API_BASE_URL}/reservations`);
+  Object.entries(params).forEach(([key, value]) =>
+    url.searchParams.append(key, value.toString())
+  );
+  return await fetchJson(url, { headers, signal }, [])
+    .then(formatReservationDate)
+    .then(formatReservationTime);
+}
+
+// Dashboard - ViewReservations
+export async function cancelReservation(id, signal) {
+  const url = new URL(`${API_BASE_URL}/reservations/${id}/status`)
+  const cancel = {data: { status: "cancelled" }}
+
+  return await fetchJson(url, {signal, method: 'PUT', body: JSON.stringify(cancel), headers})
 }
